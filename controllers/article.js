@@ -205,9 +205,7 @@ module.exports = {
         code: 400
       })
       return
-    } else {
-    }
-
+    } 
     // 允许的图片类型
     if (req.file) {
       if (req.file.size > 1024 * 1024 || ['image/gif', 'image/png', 'image/jpeg'].indexOf(req.file.mimetype) == -1) {
@@ -218,7 +216,7 @@ module.exports = {
         fs.unlinkSync(path.join(__dirname, '../', req.file.path))
         return
       }
-      cover = config.serverAddress + `/static/articles/${req.file.filename}`
+      cover = `/static/articles/${req.file.filename}`
     }
     // 设置封面
     // 修改文章
@@ -233,9 +231,6 @@ module.exports = {
         code: 400
       })
     }
-
-    // 类型判断
-    // res.send(req.file)
   },
 
   // 文章删除
