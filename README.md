@@ -14,9 +14,16 @@
 
 运行命令：`npm i`
 
-## 端口
+如果安装速度很慢，可以修改npm镜像
 
-默认占用8000 端口
+```bash
+# 先运行
+npm config set registry http://registry.npm.taobao.org/
+# 再运行
+npm i
+```
+
+安装成功之后，才能进行后续操作。
 
 ## 启动
 
@@ -27,3 +34,6 @@
 - `node app.js` 正常启动后端
 - `node app.js token` 接口带token 校验
 
+
+
+>  会占用8000 端口
