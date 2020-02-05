@@ -2,7 +2,7 @@
 
 它是大事件项目的接口服务器。
 
-具体接口说明：https://github.com/fanyoufu/demo_bigevent_front/apidoc.md
+具体接口说明：https://github.com/fanyoufu/demo_bigevent_server/blob/master/apidoc.md
 
 大事件项目的前端代码地址：https://github.com/fanyoufu/demo_bigevent_front
 
