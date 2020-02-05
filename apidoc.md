@@ -126,8 +126,6 @@
 | code |   number   | 状态                                                         |
 | data | array。5条 | 文章数据数组，其中每个成员包含字段：<br />id: number类型，文章id<br>title:  string类型，文章标题<br>intro: string类型，文章文字内容截取<br />cover: string类型，文章封面图片地址<br />type: string类型，文章类型<br />read: number类型，文章阅读次数<br />comment: number类型，文章评论次数<br />date: number类型，时间 戳 |
 
-返
-
 
 
 ### 最新评论
@@ -521,6 +519,8 @@
 请求地址：基地址/admin/article_edit
 
 请求方式：post
+
+请求参数：formData
 
 请求参数：
 
