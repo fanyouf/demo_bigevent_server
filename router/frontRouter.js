@@ -75,6 +75,27 @@ router.post('/post_comment', (req, res) => {
   const article_id = req.body.article_id
   const name = req.body.name
   const content = req.body.content
+  if(!article_id) {
+    res.send({
+      msg: '文章编号 没有设置',
+      code: 400
+    })
+    return 
+  }
+  if(!name) {
+    res.send({
+      msg: '用户名没有设置',
+      code: 400
+    })
+    return 
+  }
+  if(!content) {
+    res.send({
+      msg: '内容没有设置',
+      code: 400
+    })
+    return 
+  }
 
   const result = COMMENT.addComments({ name, content, article_id })
   if (result) {
