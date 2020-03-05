@@ -2,27 +2,21 @@
 const express = require('express')
 // 导入路由
 const router = express.Router()
-// 导入信息
-const message = require('../utils/message')
 
-const path = require('path')
-// 导入数据
-const db = require('../utils/article')
-const COMMENT = require('../utils/comment')
-const CATE_PATH = path.join(__dirname, '../db/category.json')
-// 导入控制器
 const categoryController = require('../controllers/category')
+const {justifyCoverPath}  = require("../utils/urlPath")
+const  zh   = require("../utils/zh")
+const mArticle = require('../model/article')
+const mComment = require('../model/comment')
+const  Chain  = require("../utils/opchain")
 
 // 文章搜索
-router.get('/search', (req, res, next) => {
-  const cateList = require(CATE_PATH)
-
-  var regx = /[\u4E00-\u9FA5\d]+/g
+router.get('/article_search', async (req, res, next) => {
 
   // 参数获取
-  const key = req.query.key || ''
-  const type = req.query.type ? Number(req.query.type) : 0
   const page = Number(req.query.page) || 1
+  const state =  req.query.state
+  const typeId =  req.query.typeId
   const perpage = req.query.perpage ? Number(req.query.perpage) : 6
 
   // 类型判断
@@ -31,51 +25,64 @@ router.get('/search', (req, res, next) => {
     return
   }
   // 数据获取
-  const article = db.getArticle().filter(it => {
-    const rs = []
-    rs.push(it.state === '已发布')
-    if (type) {
-      rs.push(Number(it.type) === Number(type))
-    }
-    if (key) {
-      rs.push(it.title.includes(key))
-    }
-    return rs.every(it => it)
-  })
+  let result = await mArticle.count({typeId, state})
+    let total = result[0].total
+    let totalPage = Math.ceil( total / perpage )
 
-  const curArticleList = article.reverse().splice((page - 1) * perpage, perpage)
+    console.log("total,  totalPage", totalPage)
 
-  curArticleList.map(item => {
-    let type = cateList.find(it => it.id === item.type)
-    type = type ? type.name : '未知'
-    item.type = type
-
-    var matches = []
-    var match = ''
-    do {
-      match = regx.exec(item.content)
-      matches.push(match)
-    } while (match)
-
-    item.content = matches.join().substr(0, 100) + '...'
-  })
-
-  res.json({
-    code: 200,
-    msg: '查询成功',
-    pages: Math.ceil(article.length / perpage) || 1,
-    page,
-    data: curArticleList
+  
+  mArticle.selBref({perpage,page,state,typeId}).then(result =>{
+    res.json({
+      code: 200,
+      msg: '查询成功',
+      pages: totalPage,
+      page,
+      // data:  result ,
+      data: (new Chain(result)).then(justifyCoverPath).then(zh).end()
+    })
+  }).catch(err => {
+    console.log(err)
   })
 })
 
+router.post('/visit', (req, res) => {
+  let id = req.body.id
+  
+  mArticle.visit(id).then(result =>{
+    res.json({
+      code: 200,
+      msg: '查询成功'
+    })
+  }).catch(err => {
+    console.log(err)
+  })
+})
+
+
+// 获取最新
+router.get('/lastest', (req, res) => {
+  
+  let num = 5
+  let offset = 5
+  mArticle.selLast(num,offset).then(result =>{
+    res.json({
+      code: 200,
+      msg: '查询成功',
+      data: (new Chain(result)).then(justifyCoverPath).then(zh).end()
+      // data: justifyCoverPath(result)
+    })
+  }).catch(err => {
+    console.log(err)
+  })
+})
 // 评论
 router.post('/post_comment', (req, res) => {
   // 参数获取
-  const article_id = req.body.article_id
+  const art_id = req.body.article_id
   const name = req.body.name
   const content = req.body.content
-  if(!article_id) {
+  if(!art_id) {
     res.send({
       msg: '文章编号 没有设置',
       code: 400
@@ -97,87 +104,51 @@ router.post('/post_comment', (req, res) => {
     return 
   }
 
-  const result = COMMENT.addComments({ name, content, article_id })
-  if (result) {
+  mComment.add({ name, content, art_id }).then(result => {
+    // console.log(result)
     res.send({
       msg: '添加评论成功',
       code: 200
     })
-  } else {
+  }).catch(err => {
+    console.log(err)
     res.send({
       msg: '添加评论不成功',
       code: 400
     })
-  }
+  })
+
 })
 
 // 获取指定文章编号的评论
 router.get('/get_comments', (req, res) => {
   // 参数获取
-  const article_id = req.query.article_id
 
-  const result = COMMENT.getComments({ article_id })
-  if (result) {
+  const art_id = req.query.article_id
+  if(!art_id){
+    res.send({
+      msg: '缺少文章编号',
+      code: 400
+    })
+    return
+  }
+  mComment.sel({art_id,m_state:"已审核"}).then(result =>{
     res.send({
       msg: '获取评论成功！',
       code: 200,
       data: result
     })
-  } else {
+  }).catch(err=>{
+    console.log(err)
     res.send({
       msg: '获取评论不成功',
       code: 400
     })
-  }
-})
-
-router.get('/lastest', (req, res) => {
-  const cateList = require(CATE_PATH)
-  // console.log(cateList)
-  var regx = /[\u4E00-\u9FA5\d]+/g
-  // 数据获取
-  const article = db.getArticle().slice(-5).map(it => {
-    let { id, title, content, cover, type, read, comment, date } = it
-    content += ''
-    content = content.substr(0, 200)
-    console.log(content)
-
-    var matches = []
-    var match = ''
-    do {
-      match = regx.exec(content)
-      matches.push(match)
-    } while (match)
-
-    type = cateList.find(it => it.id == type)
-    type = type ? type.name : '未知'
-    return {
-      id,
-      title,
-      intro: matches.join(),
-      cover,
-      type,
-      read,
-      comment,
-      date
-    }
-  })
-
-  res.json({
-    code: 200,
-    data: article
   })
 })
+
 // 分类获取
 router.get('/category', categoryController.category_search)
-router.get('/latest_comment', (req, res) => {
-  const result = COMMENT.getComments()
-  res.json({
-    code: 200,
-    msg: '获取成功',
-    data: result.reverse().splice(0, 6)
-  })
-})
 
 // 访问新闻详情
 router.get('/article', (req, res, _next) => {
@@ -187,75 +158,46 @@ router.get('/article', (req, res, _next) => {
     _next({ msg: '文章编号格式不对' })
     return
   }
-  const articleList = db.getArticle()
+  mArticle.sel({id}).then(result => {
+    mArticle.visit(id)
+    res.json({
+      code: 200,
+      data: result[0]
+    })
 
-  const idx = articleList.findIndex(it => it.id === id)
-  if (idx === -1) {
-    res.json({ code: 404, msg: '没有找到' })
-    return
-  }
-  let { title, author, type:type_id, date, read, comment, content, prev, next } = articleList[idx]
-  const cateList = require(CATE_PATH)
-
-  let type_name = cateList.find(it => it.id == type_id)
-  type_name = type_name ? type_name.name : '未知'
-  // 增加一次阅读量
-  db.editArticle({ id: id, read: 1 })
-
-  comment = COMMENT.getComments({ article_id: id }).length
-
-  if (idx > 0) {
-    prev = { id: articleList[idx - 1].id, title: articleList[idx - 1].title }
-  }
-  if (idx < articleList.length - 1) {
-    next = { id: articleList[idx + 1].id, title: articleList[idx + 1].title }
-  }
-
-  res.json({
-    code: 200,
-    data: {
-      title, author, type_id,type_name, date, read, comment, content, prev, next
-    }
+  }).catch(err=>{
+    console.log(err)
   })
 })
 
 // 获取最新的6条评论列表
-router.get('/get_latest_comments', (req, res) => {
-  const commentList = COMMENT.getComments()
-    .sort((a, b) => Number(b.dt) - Number(a.dt))
-    .splice(0, 6)
-
-  res.json({
-    code: 200,
-    data: commentList
+router.get('/get_latest_comments', (req, res,next) => {
+  let {art_id} = req.query
+  mComment.rank({num:7,art_id}).then(data=>{
+    res.json({
+      code:200,
+      msg:"获取成功",
+      data
+    })
+  }).catch(err=>{
+    next(err)
   })
 })
 
 // 阅读量排行
 router.get('/rank', (req, res, _next) => {
-  let { type } = req.query
-  type = type || 0
-  type = Number(type)
-  if (isNaN(type)) {
-    _next({ msg: '文章编号格式不对' })
-    return
-  }
-
-  let articleList = []
-  if (type) {
-    articleList = db.getArticle()
-      .filter(it => (it.type == type))
-      .sort((a, b) => b.read - a.read)
-      .splice(0, 7)
-      .map(it => ({ id: it.id, title: it.title, read: it.read }))
-  } else {
-    articleList = db.getArticle().sort((a, b) => b.read - a.read).splice(0, 7).map(it => ({ id: it.id, title: it.title, read: it.read }))
-  }
-
-  res.json({
-    code: 200,
-    data: articleList
+  var {typeId} = req.query
+  var num = 7 // 只取排名前7
+  mArticle.rank({num,typeId}).then(data => {
+    res.json({
+      code: 200,
+      data
+    })
+  }).catch(err =>{
+    _next(err)
   })
+
+  
 })
 // 暴露
 module.exports = router

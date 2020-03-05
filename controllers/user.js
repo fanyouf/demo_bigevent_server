@@ -1,35 +1,54 @@
 const path = require('path')
-var urljoin = require('url-join')
 
-const db = require(path.join(__dirname, '../utils/db'))
-const config = require(path.join(__dirname, '../utils/config'))
 const jwt = require('jsonwebtoken')
+const {justifyCoverPath} = require("../utils/urlPath")
+
+const mUser = require("../model/users")
 module.exports = {
   // 用户登录
   login (req, res) {
     // 数据获取
+    
     const user_name = req.body.user_name || ''
     const password = req.body.password || ''
     // 类型判断
-    if (user_name === 'admin' && password === '123456') {
+    console.log(user_name, password)
+    mUser.login(user_name,password).then(userInfo=>{
+      if(!userInfo){
+        res.send({
+          msg: '用户名或密码错误',
+          code: 400
+        })
+        return 
+      }
+      if(userInfo.length === 0) {
+        res.send({
+          msg: '用户名或密码错误',
+          code: 400
+        })
+        return
+      }
+      console.log(userInfo)
+    // if (user_name === 'admin' && password === '123456') {
       const secretOrPrivateKey = 'jwt' // 这是加密的key（密钥）
-      const token = jwt.sign({ user_name: 'admin' }, secretOrPrivateKey, {
+      const token = jwt.sign({ user_name: userInfo.username }, secretOrPrivateKey, {
         expiresIn: 60 * 60 * 1 // 1小时过期
       })
       // res.setHeader('set-cookie', ['token=' + token]);
       res.cookie('token', token)
-      // res.setHeader('set-cookie', [`token=${token};expires=${new Date(Date.now() -100).toUTCString()}`]);
-      // res.setHeader('set-cookie', [`token=${token};expires=${new Date(Date.now() -100).toUTCString()}`]);
+      res.cookie('username', user_name)
       res.send({
         msg: '登录成功',
-        code: 200
+        code: 200,
+        data:userInfo
+
       })
-    } else {
+    }).catch(err=> {
       res.send({
-        msg: '用户名或密码错误',
-        code: 400
+        msg: '登录失败',
+        code: 500
       })
-    }
+    })
   },
   // 用户登出
   logout (req, res) {
@@ -40,15 +59,62 @@ module.exports = {
   },
   // 获取用户信息
   getuser (req, res) {
-    let { nickname, user_pic } = db.getUser()
-    // user_pic = path.join( config.serverAddress, user_pic)
-    user_pic = urljoin( config.serverAddress, user_pic)
-    
-    // 获取用户信息
-    res.send({
-      msg: '获取成功',
-      code: 200,
-      data: { nickname, user_pic }
+    const {username } = req.cookies
+    mUser.getUser(username).then(result=>{
+      // 获取用户信息
+      res.send({
+        msg: '获取成功',
+        code: 200,
+        data: justifyCoverPath(result[0],'user_pic')
+      })
     })
-  }
+  },
+  // 编辑用户信息
+  async userEdit(req, res) {
+  
+    // 获取数据
+    const { username }  = req.cookies
+    const {nickname,oldPassword:oldpassword,newPassword:password,email} = req.body
+   
+    let user_pic = req.file ?
+    `/static/${req.file.filename}` :
+    undefined
+
+       let userInfo = await mUser.login(username,oldpassword)
+    if(!userInfo){
+      res.json({
+        code:500,
+        msg:"服务器错误"
+      })
+      return
+    }
+    if(!userInfo.length){
+      res.json({
+        code:400,
+        msg:"原密码错误"
+      })
+      return
+    }
+    if (!nickname) {
+      res.send({
+        msg: '昵称不能为空哦',
+        code: 400
+      })
+      return
+    } 
+  
+    mUser.mod({username,nickname,password,user_pic,email}).then(result=>{
+      console.log(result)
+      res.send({
+        msg: '修改成功',
+        code: 200
+      })
+    }).catch(err=>{
+      console.log(err)
+      res.send({
+        msg: '修改失败，请检查参数',
+        code: 400
+      })
+    })
+  },
 }

@@ -1,116 +1,68 @@
 const path = require('path')
-const article = require(path.join(__dirname, '../utils/article'))
-const category = require(path.join(__dirname, '../utils/category'))
-const config = require(path.join(__dirname, '../utils/config'))
-const moment = require('moment')
-const fs = require('fs')
-module.exports = {
-  // 文章搜索
 
-  search (req, res) {
+const fs = require('fs')
+const {justifyCoverPath} = require("../utils/urlPath")
+const mArticle = require("../model/article")
+module.exports = {
+  /**
+   * 文章搜索
+   * @param {*} req 
+   * @param {*} res 
+   */
+  async article_search (req, res) {
     // 获取提交的数据
-    const key = req.query.key || ''
-    const type = req.query.type || ''
+    // const key = req.query.key || ''
+    const typeId = req.query.typeId || ''
     const state = req.query.state || ''
     const page = parseInt(req.query.page || 1)
     const perpage = parseInt(req.query.perpage || 6)
     const id = req.query.id
-
-    // 文章检索
-    let articles = article.getArticle()
-    // 类型筛选
-    articles = articles.filter(v => {
-      // 类型筛选
-      const rs = []
-      rs.push(type == '' ? true : v.type == type)
-      rs.push(state == '' ? true : v.state == state)
-      return rs.every(item => item)
-    })
-
-    // 获取分类
-    const cateData = {}
-    category.getCategory().map(v => {
-      cateData[v.id] = v.name
-    })
-    // 关键字
-    articles = articles
-      .filter(v => {
-        if (key == '') return true
-        try {
-          return v.title.indexOf(key) != -1 || v.content.indexOf(key) != -1
-        } catch (error) {
-          return false
-        }
-      })
-      .reverse()
-      .map(v => {
-        let { id, title, content, cover, type, read, comment, date, state, author } = v
-        if (cover.indexOf('http') == -1 && cover.indexOf(config.serverAddress) == -1) {
-          cover = config.serverAddress + cover
-        }
-        type = cateData[type]
-        return {
-          id,
-          title,
-          content,
-          cover,
-          type,
-          read,
-          comment,
-          date,
-          state,
-          author
-        }
-      })
     if (id) {
-      // 如果只是id
-      const editOne = articles.filter(v => {
-        return v.id == id
-      })[0]
-
-      // 设置type 为id
-      for (const key in cateData) {
-        if (cateData[key] == editOne.type) {
-          editOne.type = key
-        }
-      }
-      if (editOne) {
-        res.send({
-          msg: '获取成功',
+      mArticle.sel({id}).then(result=> {
+        console.log("搜索",id)
+        res.json( {
+          msg: '搜索成功',
           code: 200,
-          data: editOne
+          data: justifyCoverPath(result[0])
         })
         return
-      }
+      }).catch(err=>{
+        console.log(err)
+      })
+      return 
     }
-
-    // 实现分页
-    const startIndex = (page - 1) * perpage
-    let endIndex = startIndex + perpage
-    if (endIndex > articles.length) {
-      endIndex = articles.length
+    
+    let result = await mArticle.count({typeId, state})
+    let total = result[0].total
+    let totalPage = Math.ceil( total / perpage )
+    if(page > totalPage){
+      res.json( {
+        msg: '当前搜索的页码超过了最大的页码',
+        code: 400
+      })
+      return
     }
-    // 总页数
-    const totalPage = Math.ceil(articles.length / perpage) || 1
-    // 返回的数据
-    var backData = []
-    console.log(`分页 起始索引${startIndex}  结束索引${endIndex}`)
-    for (let i = startIndex; i < endIndex; i++) {
-      backData.push(articles[i])
-    }
-    res.send({
-      msg: '搜索成功',
-      code: 200,
-      totalPage,
-      data: backData
+    console.log("total,  totalPage", totalPage)
+    
+    mArticle.sel({typeId, state,page, perpage}).then(result=> {
+      // console.log("搜索",result)
+      res.json( {
+        msg: '搜索成功',
+        code: 200,
+        data: justifyCoverPath(result),
+        totalPage:totalPage 
+      })
+      return
+    }).catch(err=>{
+      console.log(err)
     })
   },
   // 文章发布
   article_publish (req, res) {
     // 获取数据
     const title = req.body.title || ''
-    const type = req.body.type || 1
-    const date = req.body.date || moment().format('YYYY-MM-DD')
+    const typeId = req.body.typeId || 0
+    const date = req.body.date
     const content = req.body.content || ''
     const state = req.body.state || '草稿'
     let cover
@@ -121,7 +73,7 @@ module.exports = {
         code: 400
       })
       return
-    } else if (req.file.size > 1024 * 1024 * 5 || ['image/gif', 'image/png', 'image/jpeg'].indexOf(req.file.mimetype) == -1) {
+    } else if (req.file.size > 1024 * 1024 * 5 || ['image/gif', 'image/jfif', 'image/png', 'image/jpeg', 'image/webp'].indexOf(req.file.mimetype) == -1) {
       res.send({
         msg: '文件大小或类型不对，请检查',
         code: 400
@@ -138,7 +90,7 @@ module.exports = {
       return
     }
     // 标题判断
-    if (!type) {
+    if (!typeId) {
       res.send({
         msg: '类型不能为空哦',
         code: 400
@@ -148,36 +100,55 @@ module.exports = {
     // 设置封面
     cover = `/static/articles/${req.file.filename}`
     // 获取文章
-    if (
-      article.addArticle({
-        title,
-        content,
-        cover,
-        type,
-        date,
-        author: '管理员',
-        state
-      })
-    ) {
+    mArticle.add( {
+      title,
+      content,
+      coverPath:cover,
+      visitedNum:0,
+      commentNum:0,
+      typeId,
+      date,
+      author: '管理员',
+      state
+    } ).then( result => {
       res.send({
         msg: '发布成功',
         code: 201
       })
-    } else {
+    }).catch(err => {
+      console.log(err)
       res.send({
         msg: '发布失败',
         code: 400
       })
+    })
+  },
+  // 文章修改状态
+  article_modstate(req,res){
+    let {id,state} = req.body
+    if(!id){
+      res.json({code:400,msg:"文章编号不能为空"});
+      return 
     }
-    // 类型判断
-    // res.send(req.file)
+    if(!['已发布','草稿'].includes(state)){
+      res.json({code:400,msg:"文章状态必须是已发布或者是草稿"});
+      return  
+    }
+    mArticle.mod({id,state}).then(result => {
+      res.json({
+        code:200,
+        msg:"编辑成功",
+        data:result
+      })
+    })
+
   },
   // 文章编辑
   article_edit (req, res) {
     const id = req.body.id
     // 获取数据
     const title = req.body.title
-    const type = req.body.type
+    const typeId = req.body.typeId
     const date = req.body.date
     const content = req.body.content
     let cover
@@ -199,7 +170,7 @@ module.exports = {
       return
     }
     // 标题判断
-    if (!type) {
+    if (!typeId) {
       res.send({
         msg: '类型不能为空哦',
         code: 400
@@ -220,39 +191,117 @@ module.exports = {
     }
     // 设置封面
     // 修改文章
-    if (article.editArticle({ id, title, type, content, cover, date })) {
+    mArticle.mod({ id, title, typeId, content, cover, date }).then(result=>{
+      console.log(result)
       res.send({
         msg: '修改成功',
         code: 200
       })
-    } else {
+    }).catch(err=>{
+      console.log(err)
       res.send({
         msg: '修改失败，请检查参数',
         code: 400
       })
-    }
+    })
   },
 
   // 文章删除
-  article_delete (req, res) {
-    console.log('article_delete....', req.query.id)
+  article_delete (req, res,next) {
+    const {id} = req.body
     // 获取id
-    if (!req.query.id) {
+    if (!id) {
       res.send({ msg: 'id不能为空', code: 400 })
       return
     }
-    // 获取id
-    const id = req.query.id
     if (isNaN(id)) {
       res.send({ msg: 'id无效,请检查', code: 400 })
       return
     }
 
     // 删除
-    if (article.del(id)) {
-      res.send({ msg: '删除成功', code: 200 })
-    } else {
-      res.send({ msg: '删除失败，请检查', code: 200 })
-    }
+    mArticle.del(id).then(data=>{
+      res.send({ msg: '删除成功', code: 200,data })
+    }).catch(err=>{
+     next(err)
+    })
+  },
+
+  /**
+   * 获取 日新增文章数
+   * 只返回一个数值
+   */
+  article_num_today(req,res,next){
+    mArticle.countToDay().then(data=>{
+      res.send({ msg: '获取成功', code: 200,data:data[0] })
+    }).catch(err=>{
+     next(err)
+    })
+  },
+  /**
+   * 获取 文章总数
+   */
+  article_num_total(req,res,next){
+    mArticle.count({}).then(data=>{
+      res.send({ msg: '获取成功', code: 200,data:data[0] })
+    }).catch(err=>{
+     next(err)
+    })
+  },
+  /**
+   * 以月为单位统计访问量
+   */
+  article_count_VisitByMonthAndType(req,res,next){
+    mArticle.countVisitByMonthAndType().then(data=>{
+      var monthSet = new Set()
+      var typeSet = new Set()
+      data.forEach(item=>{
+        monthSet.add(item.mon)
+        typeSet.add(item.name)
+      })
+      var typeArr = [...typeSet]
+      var monthArr = [...monthSet]
+
+      
+      var datas = typeArr.map(name => {
+        var visitedNum = []
+        monthArr.forEach(mon => {
+    
+          let d = data.find(d=>d.name==name&&d.mon==mon)
+          let num = d? d.visitedNum : 0
+          visitedNum.push(num)
+        })
+        return {
+          name,
+          visitedNum
+        }
+      })
+
+      res.send({ msg: '获取成功', code: 200,data:{month:monthArr,data:datas} })
+    }).catch(err=>{
+     next(err)
+    })
+  },
+  
+  /**
+   * 获取 文章统计信息
+   */
+  article_countStat(req,res,next) {
+    mArticle.countStat().then(data=>{
+      res.send({ msg: '获取成功', code: 200,data })
+    }).catch(err=>{
+     next(err)
+    })
+  },
+  /**
+   * 本月内新增文章数
+  */
+  article_count_curmonth_new(req,res,next){
+    mArticle.countCurmonthNew().then(data=>{
+      res.send({ msg: '获取成功', code: 200,data })
+    }).catch(err=>{
+     next(err)
+    })
   }
+
 }

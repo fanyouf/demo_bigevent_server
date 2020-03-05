@@ -1,27 +1,20 @@
-const path = require('path')
-const db = require(path.join(__dirname, '../utils/category'))
-const article = require(path.join(__dirname, '../utils/article'))
-
+const mCategory = require("../model/category")
+const mArticle= require("../model/article")
 module.exports = {
   // 分类查询
   category_search(req, res) {
     // 获取所有并返回
-    res.send({
-      msg: '分类获取完毕',
-      code: 200,
-      data: db
-        .getCategory()
-        .filter(v => {
-          return !v.isDelete
-        })
-        .map(v => {
-          const { name, slug, id } = v
-          return {
-            id,
-            name,
-            slug
-          }
-        })
+    mCategory.sel().then(result => {
+      res.send({
+        msg: '分类获取完毕',
+        code: 200,
+        data: result
+      })
+    }).catch(err=>{
+      res.send({
+        code:500,
+        msg:err
+      })
     })
   },
   // 分类新增
@@ -44,35 +37,36 @@ module.exports = {
     // 取值
     const name = req.body.name.trim()
     const slug = req.body.slug.trim()
-
-    // 判断是否存在
-    const filterCate = db.getCategory().filter(v => {
-      return v.name == name || v.slug == slug
-    })
-    if (filterCate.length != 0) {
-      res.send({
-        msg: 'name或slug已存在,请检查',
-        code: 400
-      })
-    } else {
-      // 新增
-      if (db.addCategory({ name, slug })) {
+    mCategory.chk({name,slug}).then(result =>{
+      if(result.length) {
         res.send({
-          msg: '新增成功',
-          code: 200
-        })
-      } else {
-        res.send({
-          msg: '新增失败，请检查',
+          msg: '新增失败，分类名称或者别名重复',
           code: 400
         })
+        return
+      } else {
+        mCategory.add({name,slug}).then(result => {
+          console.log(result)
+          res.send({
+            msg: '新增成功',
+            code: 200
+          })
+        }).catch(err=>{
+          console.log(err)
+          
+          res.send({
+            msg: '服务器错误',
+            code: 500
+          })
+        })
       }
-    }
+    })
+    
   },
   // 分类编辑
-  category_edit(req, res) {
+  async category_edit(req, res) {
     // 获取数据
-    if (!req.body.id || !req.body.id.trim || isNaN(req.body.id)) {
+    if (!req.body.id || !req.body.id.trim() || isNaN(req.body.id)) {
       res.send({
         msg: 'id不对哦，请检查',
         code: 400
@@ -97,73 +91,65 @@ module.exports = {
     const id = req.body.id
     const name = req.body.name
     const slug = req.body.slug
-    if (
-      db.getCategory().filter(v => {
-        return v.id == id
-      }).length != 1
-    ) {
+    let result = await mCategory.chk({name,slug})
+
+    if(result.length > 1) {
       res.send({
-        msg: 'id不存在哦',
+        msg: '修改失败，名称或者别名重复',
         code: 400
       })
       return
     }
-
     // 调用修改方法
-    if (db.editCategory({ id, name, slug })) {
+    mCategory.mod({ id, name, slug }).then(result => {
+      console.log(result)
+      
       res.send({
         msg: '修改成功',
         code: 200
       })
-    } else {
+    }).catch( err =>{
+      console.log(err)
       res.send({
         msg: '修改失败,请重试',
         code: 400
       })
-    }
+    })
   },
 
   // 分类删除
-  category_delete(req, res) {
+  async category_delete(req, res) {
     // 获取数据
     if (!req.body.id || !req.body.id.trim || isNaN(req.body.id)) {
       res.send({
-        msg: 'id不对哦，请检查',
+        msg: 'id不对，请检查',
         code: 400
       })
     }
     // 获取数据
     const id = req.body.id
-    if(article.checkisExitType(id) == true) {
-      res.send({
-        msg: '还有这个类型的文章，不能删除',
-        code: 400
-      })
-      return 
-    }
     
-    if (
-      db.getCategory().filter(v => {
-        return v.id == id
-      }).length != 1
-    ) {
+    let {num=0} = await mArticle.isExitTypeId(id) || {}
+    if(num>0){
       res.send({
-        msg: `${id}不存在哦`,
+        msg: `不能删除此类别,还有${num}条文章`,
         code: 400
       })
       return
     }
 
-    if (db.del(id)) {
+    mCategory.del(id).then(result =>{
+      console.log(result)
       res.send({
         msg: '删除成功',
         code: 200
       })
-    } else {
+    }).catch(err =>{
+      console.log(err)
       res.send({
-        msg: '删除失败,请重试',
-        code: 400
+        msg: '删除失败，系统错误',
+        code: 500
       })
-    }
+    })
   }
 }
