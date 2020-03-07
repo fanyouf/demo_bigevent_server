@@ -32,8 +32,5 @@ npm i
 方式二：命令行
 
 - `node app.js` 正常启动后端
-- `node app.js token` 接口带token 校验
 
-
-
->  会占用8000 端口
+>  会占用8000 端口;采用sqlite数据库,数据库文件在：db/db.db 

@@ -1,4 +1,7 @@
 # 接口文档
+
+https://documenter.getpostman.com/view/7729771/SWTD9d5z?version=latest
+
 ## 基地址
 
 接口的默认基地址为 http://localhost:8000。
@@ -11,763 +14,348 @@
 
 ## 状态说明
 
-| *状态码* | *含义*                | *说明*                                              |
-| -------- | --------------------- | --------------------------------------------------- |
-| 200      | OK                    | 请求成功                                            |
-| 201      | CREATED               | 创建成功                                            |
-| 204      | DELETED               | 删除成功                                            |
-| 400      | BAD REQUEST           | 请求的地址不存在或者包含不支持的参数                |
-| 401      | UNAUTHORIZED          | 未授权                                              |
-| 403      | FORBIDDEN             | 被禁止访问                                          |
-| 404      | NOT FOUND             | 请求的资源不存在                                    |
-| 422      | Unprocesable entity   | [POST/PUT/PATCH] 当创建一个对象时，发生一个验证错误 |
-| 500      | INTERNAL SERVER ERROR | 内部错误                                            |
+| *状态码* | *含义*                | *说明*                               |
+| -------- | --------------------- | ------------------------------------ |
+| 200      | OK                    | 请求成功                             |
+| 201      | CREATED               | 创建成功                             |
+| 400      | BAD REQUEST           | 请求的地址不存在或者包含不支持的参数 |
+| 401      | UNAUTHORIZED          | 未授权                               |
+| 404      | NOT FOUND             | 请求的资源不存在                     |
+| 500      | INTERNAL SERVER ERROR | 内部错误                             |
 
 
 
-## 前台接口
 
-### 文章类型
 
-请求地址：/category
+## 管理员-22个接口
 
-请求方式：get
+### POST 管理员-登陆
 
-请求参数：无
+url地址： localhost:8000/admin/login
 
-返回数据：
+- application/x-www-form-urlencoded
 
-| 名称 | 类型       | 说明     |
-| ---- | ---------- | -------- |
-| id   | number类型 | 类别id   |
-| name | string类型 | 类别名称 |
+参数：
 
+- user_name admin 用户名
 
+- password 123456密码
 
-### 文章搜索
+> 默认用户名是admin,密码是00000
 
-请求地址：/search
+### POST 管理员-登出
 
-请求方式：get
+url地址： localhost:8000/admin/login
 
-请求参数：
+application/x-www-form-urlencoded
 
-|  名称   |  类型  | 说明                                         |
-| :-----: | :----: | -------------------------------------------- |
-|   key   | string | 搜索关键词，可以为空，为空返回某类型所有文章 |
-|  type   | number | 文章类型编号，可以为空，为空返回所有类型文章     |
-|  page   | number | 当前页，为空返回第1页                        |
-| perpage | number | 每页显示条数，为空默认每页6条                |
 
-返回数据：
 
-| 名称  |  类型  | 说明                                                         |
-| :---: | :----: | ------------------------------------------------------------ |
-| pages | number | 总页数                                                       |
-| page  | number | 当前页                                                       |
-| data  | array  | 文章数据数组，其中每个成员包含字段：<br />id: number类型，文章id<br>title:  string类型，文章标题<br>intro: string类型，文章文字内容截取<br />cover: string类型，文章封面图片地址<br />type: string类型，文章类型<br />read: number类型，文章阅读次数<br />comment: number类型，文章评论次数<br />date: string类型， 文章发布时间 |
+### POST 管理员-个人信息-编辑
 
-返回数据结构示例：
+url地址：http://localhost:8000/admin/edituser
 
-```json
-{
-    "pages":5,
-    "page":2,
-    "data":[
-        {
-            "id":1,
-            "title":'文章标题文字...',
-            "intro":'文章内容文字...',
-            "cover":'dfgh/hijk/iui8989.jpg'
-            ......
-        }
-        ......
-    ]
-}
-```
+formdata
 
 
 
-### 文章热门排行
+参数： 
 
-请求地址：/rank
+- nickname 昵称可选。昵称。
+- email 邮件
+- cover 用户头像
+- oldPassword 旧密码
+- newPassword 新密码
 
-请求方式：get
 
-请求参数：
 
-​	type: 文章类别编号。如果不传则在全部的类别中进行排行。
+### GET 管理员-个人信息-获取
 
-返回数据：（只返回7条）
+url地址：http://localhost:8000/admin/getuser
 
-| 名称  | 类型       | 说明       |
-| ----- | ---------- | ---------- |
-| id    | number类型 | 文章id     |
-| title | string     | 文章标题   |
-| read  | number     | 阅读的次数 |
 
 
+### GET 管理员-文章类别-获取
 
-### 最新资讯
+http://localhost:8000/admin/category_sel
 
-请求地址：/lastest
 
-请求方式：get
 
-请求参数：无
 
-返回数据：（只返回5条）
 
+### POST 管理员-文章类别-增加
 
+http://localhost:8000/admin/category_add
 
-| 名称 |    类型    | 说明                                                         |
-| :--: | :--------: | ------------------------------------------------------------ |
-| msg  |   string   | 字符串                                                       |
-| code |   number   | 状态                                                         |
-| data | array。5条 | 文章数据数组，其中每个成员包含字段：<br />id: number类型，文章id<br>title:  string类型，文章标题<br>intro: string类型，文章文字内容截取<br />cover: string类型，文章封面图片地址<br />type: string类型，文章类型<br />read: number类型，文章阅读次数<br />comment: number类型，文章评论次数<br />date: number类型，时间 戳 |
 
 
+application/x-www-form-urlencoded
 
-### 最新评论
 
-请求地址：/get_latest_comments
 
-请求方式：get
+参数：
 
-请求参数：
+- name 类别的名称
+- slug 类别的别名
 
-​	type: 类别编号。如果不传则在全部的类别中进行排行。
 
-返回数据：（只返回6条）
 
-|  名称   |  类型  | 说明       |
-| :-----: | :----: | ---------- |
-|  name   | string | 用户名称   |
-|   dt    |  int   | 评论时间戳 |
-| content | string | 评论内容   |
+### POST 管理员-文章类别-编辑
 
+http://localhost:8000/admin/category_mod
 
 
 
+application/x-www-form-urlencoded
 
-### 文章详情
+参数:
 
-请求地址：/article
+- id 类别编号
+- name  类别名字
+- slug 类别别名
 
-请求方式：get
+### POST 管理员-文章类别-删除
 
-请求参数：
+http://localhost:8000/admin/category_del
 
-| 名称 | 类型   | 说明   |
-| ---- | ------ | ------ |
-| id   | string | 文章id |
+application/x-www-form-urlencoded
 
-返回数据：
+参数：
 
-| 名称      | 类型   | 说明                                                         |
-| --------- | ------ | ------------------------------------------------------------ |
-| title     | string | 文章标题                                                     |
-| author    | string | 文章作者                                                     |
-| type_name | string | 文章类型名称                                                 |
-| type_id   | number | 文章类型编号                                                 |
-| date      | string | 文章发布时间                                                 |
-| read      | number | 阅读次数                                                     |
-| comment   | number | 评论条数                                                     |
-| content   | string | 文章内容                                                     |
-| prev      | object | 上一篇文章<br />id： 上一篇文章的id<br />title：上一篇文章的标题 |
-| next      | object | 下一篇文章<br />id： 下一篇文章的id<br />title：下一篇文章的标题 |
+- id:  要删除的文章编号
 
-### 发表评论
+### GET 管理员-文章-搜索
 
-请求地址：/post_comment
+http://localhost:8000/admin/article_sel
 
-请求方式：post
+参数：
 
-请求参数：
+- typeId 可选。文章类别编号。
+- state:状态，可选。草稿或者已发布。
+- page:当前查询的页数。可选。默认是第一页
+- perpage:一页显示几条。可选。默认是6条。
 
-| 名称       | 类型   | 说明               |
-| ---------- | ------ | ------------------ |
-| name       | string | 用户名称           |
-| content    | string | 评论内容           |
-| article_id | number | 要评论的文章的编号 |
 
-返回数据：对象。
 
+### POST 管理员-文章-删除
 
+http://localhost:8000/admin/article_del
 
-### 评论列表
 
-获取指定文章的评论
 
-请求地址：/get_comments
+application/x-www-form-urlencoded
 
-请求方式：get
+参数：
 
-请求参数：
+- id：要删除的文章的编号
 
-| 名称       | 类型        | 说明   |
-| ---------- | ----------- | ------ |
-| article_id | number,必填 | 文章id |
 
-返回数据：数组对象。
 
+### POST 管理员-文章-增加
 
+http://localhost:8000/admin/article_add
 
-## 后台接口
+ formdata
 
-### 用户登录
+参数：
 
-请求地址：基地址/admin/login
+- title： 文章标题
 
-请求方式：post
+- content： 文章正文
+- typeId ：文章类型编号
+- date ：发表日期
+- cover :文件，它表示文章封面
+- state状态。已发布|草稿
 
-请求参数：
 
-| 名称      | 类型   | 说明            |
-| --------- | ------ | --------------- |
-| user_name | string | 用户名（admin） |
-| password  | string | 密码(123456)    |
 
-返回数据：
+### POST 管理员-文章-编辑
 
-| 名称 |  类型  | 说明                                      |
-| :--: | :----: | ----------------------------------------- |
-| msg  | string | 文字信息   登录成功     用户名或密码出错  |
+http://localhost:8000/admin/article_add
 
 
 
-### 退出登录
+BODY formdata
 
-请求地址：基地址/admin/logout
+参数：
 
-请求方式：post
+- title 文章标题
+- content 文章正文
+- typeId 文章类型编号
+- date 发表日期
+- cover 文章封面
+- state 状态。已发布|草稿
+- id 文章编号，表示要编辑的文章
 
-请求参数：无
 
-返回数据：对象
 
+### GET 管理员-评论-获取
 
+http://localhost:8000/admin/comment_sel
 
-### 获取用户信息
+参数
 
-请求地址：基地址/admin/getuser
+page： 要查询的页码
 
-请求方式：get
+### POST 管理员-评论-删除
 
-请求参数：无
+http://localhost:8000/admin/article_del
 
-返回数据：
 
-|   名称   |  类型  | 说明         |
-| :------: | :----: | ------------ |
-| nickname | string | 用户昵称     |
-| user_pic | string | 用户图片地址 |
 
+application/x-www-form-urlencoded
 
+参数：
 
-### 文章数量统计
+- id 要删除的评论
 
-请求地址：基地址/admin/article_count
 
-请求方式：get
 
-请求参数：
+### POST 管理员-评论-编辑状态
 
-返回数据：
+http://localhost:8000/admin/comment_mod
 
-|   名称    |  类型  | 说明                 |
-| :-------: | :----: | -------------------- |
-| all_count | number | 文章总数             |
-| day_count | number | 当天文章发布文章总数 |
+审核评论。只有通过审核之后的评论才能显示出来
 
+application/x-www-form-urlencoded
 
+参数
 
-### 评论数量统计
+- id 要编辑状态的评论id
 
-请求地址：基地址/admin/comment_count
+- m_state:已审核|未审核
 
-请求方式：get
 
-请求参数：
 
-返回数据：
 
-|   名称    |  类型  | 说明             |
-| :-------: | :----: | ---------------- |
-| all_count | number | 评论总数         |
-| day_count | number | 当天发布评论总数 |
 
+### GET 管理员-统计-本月新增明细列表
 
+http://localhost:8000/admin/article_count_month
 
-### 月新增文章数
 
-请求地址：基地址/admin/month_article_count
 
-请求方式：get
 
-请求参数：空
 
-返回数据：（返回30条）
+### GET 管理员-统计-文章分类汇总
 
-|   名称    |  类型  | 说明           |
-| :-------: | :----: | -------------- |
-|    day    | string | 日期           |
-| day_count | number | 当天新增文章数 |
+http://localhost:8000/admin/article_category_count
 
-返回数据结构示例：
 
-```json
-[
-    {
-        "day":"2019-04-18",
-        "day_count":135        
-    },
-    {
-        "day":"2019-04-19",
-        "day_count":145        
-    },
-    {
-        "day":"2019-04-20",
-        "day_count":168        
-    },
-	{
-        "day":"2019-04-21",
-        "day_count":110        
-    },
-	{
-        "day":"2019-04-22",
-        "day_count":147        
-    }
-    ......
-]
-```
 
+### GET 管理员-统计-评论总数量
 
+http://localhost:8000/admin/comment_count
 
-### 各类型文章数量统计
 
-请求地址：基地址/admin/article_category_count
 
-请求方式：get
+### GET 管理员-统计-所有文章数量
 
-请求参数：
+http://localhost:8000/admin/article_count
 
-返回数据：（有多少类型，就返回多少条）
+管理员-统计-所有文章数量
 
-|   名称    |  类型  | 说明           |
-| :-------: | :----: | -------------- |
-|   type    | string | 文章类型       |
-| all_count | number | 该类型文章总数 |
+### GET 管理员-统计-文章-当日新增量
 
+http://localhost:8000/admin/article_count_today
 
 
-### 月文章访问量
 
-请求地址：基地址/admin/article_category_visit
+### GET 管理员-统计-评论-当日新增量
 
-请求方式：post
+http://localhost:8000/admin/comment_countToDay
 
-请求参数：
 
-返回数据：（返回最近6各月的，也就是6条）
 
-|   名称    |  类型  | 说明                                                         |
-| :-------: | :----: | ------------------------------------------------------------ |
-|   month   | string | 月份                                                         |
-| all_count | array  | 该月份各类型文章访问量<br />type：string，文章类型<br />count：number，该类型文章访问量 |
 
-返回数据结构示例：
 
-```json
-[
-    {
-        "month":'1月',
-        "all_count":[
-            {
-             "type":"科技",
-             "count":237
-            },
-            {
-             "type":"经济",
-             "count":237
-            },
-            {
-             "type":"股市",
-             "count":237
-            },
-    		{
-             "type":"商品",
-             "count":237
-            },
-            {
-             "type":"外汇",
-             "count":237
-            }
-        ]
-    },
-    {
-        "month":'2月',
-        "all_count":[
-            {
-             "type":"科技",
-             "count":237
-            },
-            {
-             "type":"经济",
-             "count":237
-            },
-            {
-             "type":"股市",
-             "count":237
-            },
-    		{
-             "type":"商品",
-             "count":237
-            },
-            {
-             "type":"外汇",
-             "count":237
-            }
-        ]
-    },
-    {
-        "month":'三月',
-        "all_count":[
-            {
-             "type":"科技",
-             "count":237
-            },
-            {
-             "type":"经济",
-             "count":237
-            },
-            {
-             "type":"股市",
-             "count":237
-            },
-    		{
-             "type":"商品",
-             "count":237
-            },
-            {
-             "type":"外汇",
-             "count":237
-            }
-        ]
-    }
-    ......
-    
-]
-```
+### GET 管理员-统计-每月各类别文章的总访问量
 
+http://localhost:8000/admin/article_count_VisitByMonthAndType
 
 
-### 文章搜索
 
-请求地址：基地址/admin/search
+## 游客- 8个接口
 
-请求方式：get
+### GET 游客-文章类别-获取
 
-请求参数：
+http://localhost:8000/category
 
-|  名称   |  类型  | 说明                                                         |
-| :-----: | :----: | ------------------------------------------------------------ |
-|   key   | string | 搜索关键词，**可以为空**，为空返回某类型所有文章             |
-|  type   | number | 文章类型的编号，**可以为空**，为空返回所有类型文章           |
-|  state  | string | 文章状态，"草稿"或者"已发布"， 为空就是两种可以              |
-|  page   | number | 当前页，**为空**返回第1页                                    |
-| perpage | number | 每页显示条数，**为空**默认每页6条                            |
-|   id    | number | 文章id，根据id查询时，其余参数可以不选择。用来查询某一篇文章的详情 |
 
-返回数据：
 
-| 名称  |  类型  | 说明                                                         |
-| :---: | :----: | ------------------------------------------------------------ |
-| pages | number | 总页数                                                       |
-| page  | number | 当前页                                                       |
-| data  | array  | 文章数据数组，其中每个成员包含字段：<br />id: number类型，文章id<br />title:  string类型，文章标题<br />intro: string类型，文章文字内容截取<br />cover: string类型，文章封面图片地址<br />type: string类型，文章类型<br />read: number类型，文章阅读次数<br />comment: number类型，文章评论次数<br />date:string类型， 文章发布时间<br />state:string类型，文章状态 |
+### GET 游客-文章-获取最近新闻5条
 
+http://localhost:8000/lastest
 
 
-### 发布文章
 
-请求地址：基地址/admin/article_publish
+### GET 游客-文章-搜索
 
-请求方式：post
+http://localhost:8000/article_search
 
-请求参数：formData
+参数
 
-| 名称    | 类型   | 说明         |
-| ------- | ------ | ------------ |
-| title   | string | 文章标题     |
-| cover   | file   | 文章封面图片 |
-| type     | number | 文章类型id   |
-| date    | string | 日期         |
-| content | string | 文章内容     |
-| state | string | 文章状态(草稿或已发布) |
+- page 可选。第几页
+- typeId:可选。文章类别
 
-返回数据：
 
-| 名称 |  类型  | 说明                              |
-| :--: | :----: | --------------------------------- |
-| msg  | string | 文字信息  ‘发布成功’   ‘发布失败’ |
 
 
 
-### 文章编辑
+### GET 游客-文章-按文章访问量排行榜
 
-请求地址：基地址/admin/article_edit
+http://localhost:8000/rank
 
-请求方式：post
+参数
 
-请求参数：formData
+------
 
-请求参数：
+- typeId:可选。类别编号
 
-| 名称    | 类型   | 说明         |
-| ------- | ------ | ------------ |
-| id      | number | 文章id       |
-| title   | string | 文章标题     |
-| cover   | file   | 文章封面图片 |
-| type    | number | 文章类型id   |
-| date    | string | 日期         |
-| content | string | 文章内容     |
 
-返回数据：
 
-| 名称 |  类型  | 说明                              |
-| :--: | :----: | --------------------------------- |
-| msg  | string | 文字信息  ‘修改成功’   ‘修改失败’ |
+### GET 游客-文章-获取获取指定文章详情
 
+http://localhost:8000/article
 
+参数
 
-### 删除文章
+------
 
-请求地址：基地址/admin/article_delete
+id:必填。文章编号
 
-请求方式：get
 
-请求参数：
 
-| 名称 | 类型   | 说明   |
-| ---- | ------ | ------ |
-| id   | number | 文章id |
+### GET 游客-评论-获取最新6条
 
-返回数据：
+http://localhost:8000/get_latest_comments
 
-| 名称 |  类型  | 说明                              |
-| :--: | :----: | --------------------------------- |
-| msg  | string | 文字信息  ‘删除成功’   ‘删除失败’ |
 
 
+### POST 游客-评论-添加评论
 
-### 文章类别搜索
+http://localhost:8000/post_comment
 
-请求地址：基地址/admin/category_search
 
-请求方式：get
 
-请求参数：无
+参数
 
-返回数据：
+------
 
-| 名称 |  类型  | 说明     |
-| :--: | :----: | -------- |
-|  id  | number | 类别     |
-| name | string | 类别名称 |
-| slug | string | 别名     |
+- name 游客名字
 
+- content游客内容
 
+- article_id 文章编号
 
-### 新增文章类别
 
-请求地址：基地址/admin/category_add
 
-请求方式：post
+### GET 游客-评论-获取某篇文章
 
-请求参数：
+http://localhost:8000/get_comments?article_id=7
 
-| 名称 | 类型   | 说明     |
-| ---- | ------ | -------- |
-| name | string | 类别名称 |
-| slug | string | 别名     |
+参数
 
-返回数据：
+------
 
-| 名称 |  类型  | 说明                              |
-| :--: | :----: | --------------------------------- |
-| msg  | string | 文字信息  ‘增加成功’   ‘增加失败’ |
-
-
-
-### 编辑文章类别
-
-请求地址：基地址/admin/category_edit
-
-请求方式：post
-
-请求参数：
-
-| 名称 | 类型   | 说明     |
-| ---- | ------ | -------- |
-| id   | number | 文章id   |
-| name | string | 类别名称 |
-| slug | string | 别名     |
-
-返回数据：
-
-| 名称 |  类型  | 说明                              |
-| :--: | :----: | --------------------------------- |
-| msg  | string | 文字信息  ‘编辑成功’   ‘编辑失败’ |
-
-
-
-### 删除文章类别
-
-请求地址：基地址/admin/category_delete
-
-请求方式：post
-
-请求参数：
-
-| 名称 | 类型   | 说明   |
-| ---- | ------ | ------ |
-| id   | number | 类别id |
-
-返回数据：
-
-| 名称 |  类型  | 说明                              |
-| :--: | :----: | --------------------------------- |
-| msg  | string | 文字信息  ‘删除成功’   ‘删除失败’ |
-
-
-
-### 文章评论搜索
-
-请求地址：基地址/admin/comment_search
-
-请求方式：get
-
-请求参数：
-
-|  名称   |  类型  | 说明                          |
-| :-----: | :----: | ----------------------------- |
-|  page   | number | 当前页，为空返回第1页         |
-| perpage | number | 每页显示条数，为空默认每页6条 |
-
-返回数据：
-
-|  名称   |  类型  | 说明                     |
-| :-----: | :----: | ------------------------ |
-|   id    | number | 评论id                   |
-| author  | string | 评论作者                 |
-| content | string | 评论内容                 |
-|   aid   | number | 对应文章id               |
-|  title  | string | 对应文章标题             |
-|  date   | string | 评论发表时间             |
-|  state  | string | 评论状态 ‘批准’ ‘待审核’ |
-
-
-
-### 评论审核通过
-
-请求地址：基地址/admin/comment_pass
-
-请求方式：post
-
-请求参数：
-
-| 名称 | 类型   | 说明   |
-| ---- | ------ | ------ |
-| id   | number | 评论id |
-
-返回数据：
-
-| 名称 |  类型  | 说明                              |
-| :--: | :----: | --------------------------------- |
-| msg  | string | 文字信息  ‘设置成功’   ‘设置失败’ |
-
-
-
-### 评论审核不通过
-
-请求地址：基地址/admin/comment_reject
-
-请求方式：post
-
-请求参数：
-
-| 名称 | 类型   | 说明   |
-| ---- | ------ | ------ |
-| id   | number | 评论id |
-
-返回数据：
-
-| 名称 |  类型  | 说明                              |
-| :--: | :----: | --------------------------------- |
-| msg  | string | 文字信息  ‘设置成功’   ‘设置失败’ |
-
-
-
-### 删除评论
-
-请求地址：基地址/admin/comment_delete
-
-请求方式：post
-
-请求参数：
-
-| 名称 | 类型   | 说明   |
-| ---- | ------ | ------ |
-| id   | number | 评论id |
-
-返回数据：
-
-| 名称 |  类型  | 说明                              |
-| :--: | :----: | --------------------------------- |
-| msg  | string | 文字信息  ‘删除成功’   ‘删除失败’ |
-
-
-
-### 获取用户信息
-
-请求地址：基地址/admin/userinfo_get
-
-请求方式：get
-
-请求参数：无
-
-返回数据：
-
-|   名称   |  类型  | 说明         |
-| :------: | :----: | ------------ |
-| username | string | 用户名称     |
-| nickname | string | 用户昵称     |
-|  email   | string | 用户邮箱     |
-| user_pic | string | 用户图片地址 |
-| password | string | 用户密码     |
-
-
-
-### 编辑用户信息
-
-请求地址：基地址/admin/userinfo_edit
-
-请求方式：post
-
-请求参数：使用formdata提交
-
-|   名称   |  类型  | 说明         |
-| :------: | :----: | ------------ |
-| username | string | 用户名称     |
-| nickname | string | 用户昵称     |
-|  email   | string | 用户邮箱     |
-| user_pic | string | 用户图片地址 |
-| password | string | 用户密码     |
-
-返回数据：
-
-| 名称 |  类型  | 说明                              |
-| :--: | :----: | --------------------------------- |
-| msg  | string | 文字信息  ‘修改成功’   ‘修改失败’ |
-
+- article_id 必须，文章编号

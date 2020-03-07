@@ -37,30 +37,30 @@ app.use('/static', express.static('uploads'))
 
 // 是否开启鉴权
 
-// app.use('/admin', function (req, res, next) {
-//   console.log(Date.now(), req.url)
-//   if (req.url === '/login') {
-//     next()
-//   } else if (req.url === '/logout') {
-//     // res.clearCookie('token');
-//     res.cookie('token', '1', { expires: new Date(Date.now() - 1000 * 5) })
-//     next()
-//   } else {
-//     const { token,username } = req.cookies
-//     const secretOrPrivateKey = 'jwt' // 这是加密的key（密钥）
-//     jwt.verify(token, secretOrPrivateKey, (err, decode) => {
-//       console.log('jwt.verify', token)
-//       if (err) {
-//         console.log("没有登陆.................")
-//         //  时间失效的时候 || 伪造的token
-//         res.statusCode = 401
-//         res.send({ success: false, msg: '无权访问' })
-//       } else {
-//         next()
-//       }
-//     })
-//   }
-// })
+app.use('/admin', function (req, res, next) {
+    console.log(Date.now(), req.url)
+    if (req.url === '/login') {
+        next()
+    } else if (req.url === '/logout') {
+    // res.clearCookie('token');
+        res.cookie('token', '1', { expires: new Date(Date.now() - 1000 * 5) })
+        next()
+    } else {
+        const { token,username } = req.cookies
+        const secretOrPrivateKey = 'jwt' // 这是加密的key（密钥）
+        jwt.verify(token, secretOrPrivateKey, (err, decode) => {
+            console.log('jwt.verify', token)
+            if (err) {
+                console.log('没有登陆.................')
+                //  时间失效的时候 || 伪造的token
+                res.statusCode = 401
+                res.send({ success: false, msg: '无权访问' })
+            } else {
+                next()
+            }
+        })
+    }
+})
 
 
 // 注册前台路由
